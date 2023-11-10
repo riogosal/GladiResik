@@ -4,51 +4,44 @@ import (
 	entity "GladiResik/Entity"
 	"context"
 	"log"
-	"net/http"
 
-	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type Foods struct {
-	foods []entity.Food
+	foods mongo.Collection
 }
 
-func Initialize(client *mongo.Client) *Foods {
+func Initialize(client *mongo.Database) *Foods {
+	return &Foods{
+		foods: *client.Collection("foods"),
+	}
+}
+
+func (repo *Foods) ViewAll(ctx context.Context) ([]entity.Food, error) {
 	var foods []entity.Food
-	collection := client.Database("GladiResik").Collection("Food")
 
 	filter := bson.D{}
-
-	cursor, err := collection.Find(context.TODO(), filter)
+	cursor, err := repo.foods.Find(ctx, filter)
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer cursor.Close(context.TODO())
+	defer cursor.Close(ctx)
 
-	for cursor.Next(context.TODO()) {
+	for cursor.Next(ctx) {
 		var food entity.Food
 		err := cursor.Decode(&food)
 		if err != nil {
-			log.Fatal(err)
+			return nil, err
 		}
 		foods = append(foods, food)
 	}
 
-	if err := cursor.Err(); err != nil {
-		log.Fatal(err)
-	}
+	// Tidak perlu di cek sih ini
+	// if err := cursor.Err(); err != nil {
+	// 	return nil, err
+	// }
 
-	return &Foods{
-		foods: foods,
-	}
-}
-
-func (item *Foods) ViewAll(ctx *gin.Context) {
-	ctx.IndentedJSON(http.StatusOK, item.foods)
-}
-
-func (item *Foods) PrintAll() {
-
+	return foods, nil
 }

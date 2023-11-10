@@ -1,22 +1,22 @@
 package main
 
 import (
-	connection "GladiResik/Connection"
+	connection "GladiResik/Connections"
 	food "GladiResik/Food"
+	"context"
 
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func main() {
-	DB := options.Client().ApplyURI("mongodb://localhost:27017")
-	ClientDB := connection.NewDB(DB)
-	FoodData := food.Initialize(ClientDB.Client)
-	FoodData.PrintAll()
-
+	mainCtx := context.Background()
+	mongo := connection.NewDB(mainCtx)
+	defer mongo.Disconnect(mainCtx)
+	database := mongo.Database("GladiResik")
 	router := gin.Default()
-	connection.Setup(router, ClientDB, FoodData)
-	router.Run(":8080")
 
-	ClientDB.DisconnectDB()
+	FoodData := food.Initialize(database)
+	food.Setup(router, FoodData)
+
+	router.Run(":8080")
 }

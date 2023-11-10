@@ -14,8 +14,8 @@ type MongoDB struct {
 	Client    *mongo.Client
 }
 
-func NewDB(clientOptions *options.ClientOptions) *MongoDB {
-	client, err := mongo.Connect(context.TODO(), clientOptions)
+func NewDB(ctx context.Context) *mongo.Client {
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://localhost:27017"))
 	if err != nil {
 		fmt.Println("connect")
 		log.Fatal(err)
@@ -29,16 +29,13 @@ func NewDB(clientOptions *options.ClientOptions) *MongoDB {
 
 	fmt.Println("Connected to MongoDB!")
 
-	return &MongoDB{
-		ClientOpt: clientOptions,
-		Client:    client,
-	}
+	return client
 }
 
-func (MDB *MongoDB) DisconnectDB() {
-	err := MDB.Client.Disconnect(context.TODO())
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println("Connection closed.")
-}
+// func (MDB *MongoDB) DisconnectDB() {
+// 	err := MDB.Client.Disconnect(context.TODO())
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
+// 	fmt.Println("Connection closed.")
+// }
