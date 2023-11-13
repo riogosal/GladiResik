@@ -1,22 +1,32 @@
 package main
 
 import (
-	connection "GladiResik/Connection"
+	connection "GladiResik/Connections"
 	food "GladiResik/Food"
+	"context"
+	"time"
 
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"github.com/joho/godotenv"
 )
 
 func main() {
-	DB := options.Client().ApplyURI("mongodb://localhost:27017")
-	ClientDB := connection.NewDB(DB)
-	FoodData := food.Initialize(ClientDB.Client)
-	FoodData.PrintAll()
+	godotenv.Load()
 
+	mainCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Mongo Initiliazation
+	ClientDB := connection.NewDB(mainCtx)
+	defer ClientDB.Disconnect(mainCtx)
 	router := gin.Default()
-	connection.Setup(router, ClientDB, FoodData)
-	router.Run(":8080")
+	db := ClientDB.Database("GladiResik")
 
-	ClientDB.DisconnectDB()
+	FoodData := food.Initialize(db)
+	food.Setup(router, FoodData)
+
+	// FoodData.PrintAll()
+
+	// connection.Setup(router, ClientDB, FoodData)
+	router.Run(":12345")
 }
